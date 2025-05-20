@@ -9,17 +9,17 @@ wxColour ColorManager::GenerateUniqueColor() {
         wxColour(30, 144, 255),  
         wxColour(50, 205, 50),   
         wxColour(255, 215, 0),   
-        wxColour(138, 43, 226),  // BlueViolet
-        wxColour(255, 127, 80),  // Coral
-        wxColour(0, 191, 255),   // DeepSkyBlue
-        wxColour(60, 179, 113),  // MediumSeaGreen
-        wxColour(238, 130, 238), // Violet
-        wxColour(165, 42, 42),   // Brown
-        wxColour(0, 128, 128),   // Teal
-        wxColour(128, 0, 128),   // Purple
-        wxColour(0, 128, 0),     // Green
-        wxColour(128, 0, 0),     // Maroon
-        wxColour(0, 0, 128)      // Navy
+        wxColour(138, 43, 226),  
+        wxColour(255, 127, 80),  
+        wxColour(0, 191, 255),   
+        wxColour(60, 179, 113),  
+        wxColour(238, 130, 238), 
+        wxColour(165, 42, 42),   
+        wxColour(0, 128, 128),   
+        wxColour(128, 0, 128),  
+        wxColour(0, 128, 0),     
+        wxColour(128, 0, 0),     
+        wxColour(0, 0, 128)      
     };
     
     const int numColors = sizeof(predefinedColors) / sizeof(predefinedColors[0]);
