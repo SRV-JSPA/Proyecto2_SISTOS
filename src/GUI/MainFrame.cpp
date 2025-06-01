@@ -12,6 +12,10 @@ MainFrame::MainFrame(const wxString& title)
     
     CreateMenuBar();
     
+    wxLog* logger = new wxLogWindow(this, "Debug Log - Round Robin", true, false);
+    wxLog::SetActiveTarget(logger);
+    wxLog::SetVerbose(true);
+    
     CreateStatusBar(); 
     SetStatusText("Listo");
     

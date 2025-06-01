@@ -20,7 +20,7 @@ public:
     virtual void Initialize();
     virtual std::shared_ptr<Process> GetNextProcess() = 0;
     virtual void ExecuteCycle();
-    bool IsComplete() const;
+    virtual bool IsComplete() const;
     
     std::vector<ScheduleEvent> GetEvents() const;
     double CalculateAverageWaitingTime() const;

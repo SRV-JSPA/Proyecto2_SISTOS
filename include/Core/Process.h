@@ -28,4 +28,5 @@ public:
     void Execute(int timeSlice = 1);
     void Activate();
     void Deactivate();
+    void Reset();
 };

@@ -49,8 +49,8 @@ void Process::IncrementWaitingTime() {
 void Process::Execute(int timeSlice) {
     if (m_isActive && m_remainingTime > 0) {
         m_remainingTime -= timeSlice;
-        if (m_remainingTime < 0) {
-            m_remainingTime = 0;
+        if (m_remainingTime <= 0) {
+            m_remainingTime = 0;  
         }
     }
 }
@@ -60,5 +60,11 @@ void Process::Activate() {
 }
 
 void Process::Deactivate() {
+    m_isActive = false;
+}
+
+void Process::Reset() {
+    m_remainingTime = m_burstTime;
+    m_waitingTime = 0;  
     m_isActive = false;
 }

@@ -7,6 +7,7 @@
 #include "Utils/FileParser.h"
 #include <wx/filedlg.h>
 #include <sstream>
+#include <wx/log.h> 
 
 wxBEGIN_EVENT_TABLE(SchedulerPanel, SimulationPanel)
     EVT_CHOICE(ID_AlgorithmChoice, SchedulerPanel::OnAlgorithmSelected)
@@ -227,6 +228,9 @@ void SchedulerPanel::OnTimer(wxTimerEvent& event) {
     }
     
     if (m_scheduler->IsComplete()) {
+        wxLogMessage("\n*** SIMULACIÓN COMPLETADA ***");
+        wxLogMessage("Deteniendo timer y finalizando simulación");
+        
         m_isRunning = false;
         m_startButton->Disable();
         m_stopButton->Disable();
@@ -241,23 +245,44 @@ void SchedulerPanel::OnTimer(wxTimerEvent& event) {
         
         UpdateMetrics();
         
+        wxLogMessage("Métricas finales calculadas y mostradas");
         return;
     }
+    
+    wxLogMessage("\n*** TIMER TICK ***");
+    wxLogMessage("Ejecutando ciclo del scheduler...");
     
     m_scheduler->ExecuteCycle();
     
     auto events = m_scheduler->GetEvents();
-    m_ganttChart->Clear();
+    wxLogMessage("Eventos recibidos del scheduler (%zu):", events.size());
     
     for (const auto& event : events) {
+        wxLogMessage("  %s: Ciclos %d-%d (Duración: %d)", 
+                   event.pid, event.startCycle, 
+                   event.startCycle + event.duration - 1, event.duration);
+    }
+    
+    wxLogMessage("Limpiando diagrama de Gantt...");
+    m_ganttChart->Clear();
+    
+    wxLogMessage("Agregando %zu bloques visuales al diagrama:", events.size());
+    for (const auto& event : events) {
+        wxLogMessage("  Agregando bloque visual: %s (Inicio: %d, Duración: %d)", 
+                   event.pid, event.startCycle, event.duration);
         m_ganttChart->AddProcessBlock(event.pid, event.startCycle, event.duration);
     }
     
-    m_cycleText->SetLabel(wxString::Format("Ciclo: %d", m_scheduler->GetCurrentCycle()));
+    int currentCycle = m_scheduler->GetCurrentCycle();
+    wxLogMessage("Actualizando UI - Ciclo actual: %d", currentCycle);
     
-    m_ganttChart->UpdateCycle(m_scheduler->GetCurrentCycle());
+    m_cycleText->SetLabel(wxString::Format("Ciclo: %d", currentCycle));
+    m_ganttChart->UpdateCycle(currentCycle);
     
+    wxLogMessage("Actualizando métricas...");
     UpdateMetrics();
+    
+    wxLogMessage("*** FIN TIMER TICK ***\n");
 }
 
 wxString SchedulerPanel::GetResultsText() const {
