@@ -24,5 +24,8 @@ public:
     
     std::vector<ScheduleEvent> GetEvents() const;
     double CalculateAverageWaitingTime() const;
+    
+    virtual double CalculateAlgorithmSpecificWT() const;
+    
     int GetCurrentCycle() const;
 };

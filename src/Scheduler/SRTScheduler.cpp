@@ -15,3 +15,7 @@ std::shared_ptr<Process> SRTScheduler::GetNextProcess() {
     
     return nextProcess;
 }
+
+double SRTScheduler::CalculateAlgorithmSpecificWT() const {
+    return CalculateAverageWaitingTime();
+}

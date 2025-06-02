@@ -119,15 +119,14 @@ void RoundRobinScheduler::ExecuteCycle() {
     }
     wxLogMessage("Tamaño de cola ready: %zu", m_readyQueue.size());
 
+    std::shared_ptr<Process> nextProcess = GetNextProcess();
     for (auto& process : m_processes) {
         if (process->GetArrivalTime() <= m_currentCycle && 
-            !process->IsActive() && 
-            !process->IsComplete()) {
+            !process->IsComplete() && 
+            process != nextProcess) {  
             process->IncrementWaitingTime();
         }
     }
-
-    std::shared_ptr<Process> nextProcess = GetNextProcess();
     
     if (nextProcess) {
         wxLogMessage("Siguiente proceso seleccionado: %s", nextProcess->GetPID());
@@ -249,4 +248,45 @@ void RoundRobinScheduler::SetQuantum(int quantum) {
 
 int RoundRobinScheduler::GetQuantum() const {
     return m_quantum;
+}
+double RoundRobinScheduler::CalculateAlgorithmSpecificWT() const {
+    if (m_processes.empty()) {
+        return 0.0;
+    }
+    
+    double totalWT = 0.0;
+    
+    for (const auto& process : m_processes) {
+        double waitingTime = 0.0;
+        int arrivalTime = process->GetArrivalTime();
+        int burstTime = process->GetBurstTime();
+        
+        std::vector<ScheduleEvent> processEvents;
+        for (const auto& event : m_events) {
+            if (event.pid == process->GetPID()) {
+                processEvents.push_back(event);
+            }
+        }
+        
+        if (!processEvents.empty()) {
+            int firstStart = processEvents[0].startCycle;
+            
+            int completionTime = 0;
+            for (const auto& event : processEvents) {
+                int eventEnd = event.startCycle + event.duration;
+                if (eventEnd > completionTime) {
+                    completionTime = eventEnd;
+                }
+            }
+            
+            waitingTime = completionTime - arrivalTime - burstTime;
+            
+            wxLogMessage("Proceso %s: CT=%d, AT=%d, BT=%d, WT=%.2f", 
+                       process->GetPID().c_str(), completionTime, arrivalTime, burstTime, waitingTime);
+        }
+        
+        totalWT += waitingTime;
+    }
+    
+    return totalWT / m_processes.size();
 }

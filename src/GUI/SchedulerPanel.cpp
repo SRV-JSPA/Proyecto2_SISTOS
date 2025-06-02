@@ -107,7 +107,7 @@ void SchedulerPanel::CreateScheduler() {
 
 void SchedulerPanel::UpdateMetrics() {
     if (m_scheduler) {
-        double avgWaitingTime = m_scheduler->CalculateAverageWaitingTime();
+        double avgWaitingTime = m_scheduler->CalculateAlgorithmSpecificWT();
         wxString metricsText = wxString::Format("Tiempo de espera promedio: %.2f ciclos", avgWaitingTime);
         m_metricsText->SetValue(metricsText);
     }

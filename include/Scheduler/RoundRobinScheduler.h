@@ -20,4 +20,5 @@ public:
     
     void SetQuantum(int quantum);
     int GetQuantum() const;
+    double CalculateAlgorithmSpecificWT() const override;
 };

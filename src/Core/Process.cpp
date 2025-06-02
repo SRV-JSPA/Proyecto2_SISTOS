@@ -41,9 +41,7 @@ void Process::SetRemainingTime(int time) {
 }
 
 void Process::IncrementWaitingTime() {
-    if (!m_isActive && !IsComplete()) {
-        m_waitingTime++;
-    }
+    m_waitingTime++;
 }
 
 void Process::Execute(int timeSlice) {

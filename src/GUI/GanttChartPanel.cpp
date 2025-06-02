@@ -10,7 +10,7 @@ wxEND_EVENT_TABLE()
 GanttChartPanel::GanttChartPanel(wxWindow* parent)
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, 
               wxFULL_REPAINT_ON_RESIZE | wxHSCROLL),
-      m_currentCycle(0), m_maxCycles(20), m_blockWidth(30), m_blockHeight(30), m_scrollPos(0) {
+      m_currentCycle(0), m_maxCycles(20), m_blockWidth(80), m_blockHeight(50), m_scrollPos(0) {
     
     SetBackgroundColour(*wxWHITE);
     
@@ -96,18 +96,32 @@ void GanttChartPanel::DrawBlocks(wxDC& dc) {
         dc.SetPen(wxPen(wxColour(0, 0, 0), 1, wxPENSTYLE_SOLID));
         dc.DrawRectangle(x, m_blockHeight, width, m_blockHeight);
         
+        dc.SetFont(wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
         dc.SetTextForeground(wxColour(0, 0, 0));
-        dc.DrawText(block.pid, x + 5, m_blockHeight + 5);
+        
+        wxString text = wxString(block.pid);
+        wxSize textSize = dc.GetTextExtent(text);
+        int textX = x + (width - textSize.GetWidth()) / 2;
+        int textY = m_blockHeight + (m_blockHeight - textSize.GetHeight()) / 2;
+        
+        if (textSize.GetWidth() <= width - 4) {
+            dc.DrawText(text, textX, textY);
+        }
     }
 }
 
 void GanttChartPanel::DrawCycleMarkers(wxDC& dc) {
     dc.SetTextForeground(wxColour(0, 0, 0));
-    dc.SetFont(wxFont(8, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
+    dc.SetFont(wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL));
     
     for (int i = 0; i <= m_maxCycles; i++) {
         wxString text = wxString::Format("%d", i);
-        dc.DrawText(text, i * m_blockWidth + 5, 5);
+        wxSize textSize = dc.GetTextExtent(text);
+        
+        int textX = i * m_blockWidth + (m_blockWidth - textSize.GetWidth()) / 2;
+        int textY = (m_blockHeight - textSize.GetHeight()) / 2;
+        
+        dc.DrawText(text, textX, textY);
     }
     
     if (m_currentCycle <= m_maxCycles) {
