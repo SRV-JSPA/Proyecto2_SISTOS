@@ -276,7 +276,90 @@ void SynchronizationPanel::OnTimer(wxTimerEvent& event) {
         return;
     }
     
+    m_syncMechanism->ExecuteCycle();
+    
+    auto events = m_syncMechanism->GetEvents();
+    
+    std::cout << "\n=== VISUALIZATION UPDATE ===" << std::endl;
+    std::cout << "Total events received: " << events.size() << std::endl;
+    for (size_t i = 0; i < events.size(); ++i) {
+        const auto& evt = events[i];
+        std::cout << "Event " << i << ": " << evt.pid << " -> " << evt.resourceName 
+                  << " at cycle " << evt.cycle << " (waiting: " << (evt.isWaiting ? "YES" : "NO") << ")" << std::endl;
+    }
+    
+    m_ganttChart->Clear();
+    
+    std::map<std::string, std::vector<SyncEvent>> groupedEvents;
+    
+    for (const auto& evt : events) {
+        std::string key = evt.pid + "_" + evt.resourceName;
+        groupedEvents[key].push_back(evt);
+        std::cout << "Added event to group: " << key << " (cycle " << evt.cycle << ")" << std::endl;
+    }
+    
+    std::cout << "Total groups created: " << groupedEvents.size() << std::endl;
+    for (const auto& pair : groupedEvents) {
+        std::cout << "Group '" << pair.first << "' has " << pair.second.size() << " events" << std::endl;
+    }
+    
+    for (const auto& pair : groupedEvents) {
+        const std::string& identifier = pair.first;
+        const std::vector<SyncEvent>& eventList = pair.second;
+        
+        std::cout << "\nProcessing group: " << identifier << std::endl;
+        
+        size_t underscorePos = identifier.find('_');
+        std::string pid = identifier.substr(0, underscorePos);
+        std::string resourceName = identifier.substr(underscorePos + 1);
+        
+        std::cout << "Extracted - PID: '" << pid << "', Resource: '" << resourceName << "'" << std::endl;
+        
+        if (!eventList.empty()) {
+            int startCycle = eventList[0].cycle;
+            bool currentState = eventList[0].isWaiting;
+            int duration = 1;
+            
+            std::cout << "Starting block: cycle " << startCycle << ", waiting: " << (currentState ? "YES" : "NO") << std::endl;
+            
+            for (size_t i = 1; i < eventList.size(); ++i) {
+                if (eventList[i].isWaiting == currentState && 
+                    eventList[i].cycle == startCycle + duration) {
+                    duration++;
+                    std::cout << "Extending block, new duration: " << duration << std::endl;
+                } else {
+                    std::cout << "Adding block: " << pid << "_" << resourceName 
+                              << " at cycle " << startCycle << " duration " << duration 
+                              << " waiting: " << (currentState ? "YES" : "NO") << std::endl;
+                    
+                    m_ganttChart->AddSyncBlock(pid, resourceName, startCycle, duration, currentState);
+                    
+                    startCycle = eventList[i].cycle;
+                    currentState = eventList[i].isWaiting;
+                    duration = 1;
+                    
+                    std::cout << "Starting new block: cycle " << startCycle << ", waiting: " << (currentState ? "YES" : "NO") << std::endl;
+                }
+            }
+            
+            std::cout << "Adding FINAL block: " << pid << "_" << resourceName 
+                      << " at cycle " << startCycle << " duration " << duration 
+                      << " waiting: " << (currentState ? "YES" : "NO") << std::endl;
+            
+            m_ganttChart->AddSyncBlock(pid, resourceName, startCycle, duration, currentState);
+        }
+    }
+    
+    int currentCycle = m_syncMechanism->GetCurrentCycle();
+    std::cout << "Current cycle: " << currentCycle << std::endl;
+    m_cycleText->SetLabel(wxString::Format("Ciclo: %d", currentCycle));
+    m_ganttChart->UpdateCycle(currentCycle);
+    
+    std::cout << "=== END VISUALIZATION UPDATE ===\n" << std::endl;
+    
     if (m_syncMechanism->IsComplete()) {
+        std::cout << "Simulation complete! Final visualization updated." << std::endl;
+        
         m_isRunning = false;
         m_startButton->Disable();
         m_stopButton->Disable();
@@ -292,43 +375,6 @@ void SynchronizationPanel::OnTimer(wxTimerEvent& event) {
         
         return;
     }
-    
-    m_syncMechanism->ExecuteCycle();
-    
-    auto events = m_syncMechanism->GetEvents();
-    m_ganttChart->Clear();
-    
-    std::map<std::string, int> processStartCycles;
-    std::map<std::string, int> processDurations;
-    
-    for (const auto& event : events) {
-        std::string identifier = event.pid + "_" + event.resourceName;
-        
-        if (processStartCycles.find(identifier) == processStartCycles.end()) {
-            processStartCycles[identifier] = event.cycle;
-            processDurations[identifier] = 1;
-        } else {
-            int currentCycle = event.cycle;
-            int startCycle = processStartCycles[identifier];
-            int endCycle = startCycle + processDurations[identifier];
-            
-            if (currentCycle == endCycle) {
-                processDurations[identifier]++;
-            } else {
-                m_ganttChart->AddProcessBlock(identifier, startCycle, processDurations[identifier]);
-                processStartCycles[identifier] = currentCycle;
-                processDurations[identifier] = 1;
-            }
-        }
-    }
-    
-    for (const auto& pair : processStartCycles) {
-        m_ganttChart->AddProcessBlock(pair.first, pair.second, processDurations[pair.first]);
-    }
-    
-    m_cycleText->SetLabel(wxString::Format("Ciclo: %d", m_syncMechanism->GetCurrentCycle()));
-    
-    m_ganttChart->UpdateCycle(m_syncMechanism->GetCurrentCycle());
 }
 
 wxString SynchronizationPanel::GetResultsText() const {

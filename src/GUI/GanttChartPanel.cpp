@@ -45,6 +45,7 @@ void GanttChartPanel::UpdateCycle(int cycle) {
 
 void GanttChartPanel::Clear() {
     m_blocks.clear();
+    m_syncBlocks.clear();  
     m_currentCycle = 0;
     m_maxCycles = 20;
     m_scrollPos = 0;
@@ -65,7 +66,12 @@ void GanttChartPanel::OnPaint(wxPaintEvent& WXUNUSED(event)) {
     dc.SetDeviceOrigin(-m_scrollPos * m_blockWidth, 0);
     
     DrawGrid(dc);
-    DrawBlocks(dc);
+    if (!m_syncBlocks.empty()) {
+        DrawSyncBlocks(dc);  
+    } else {
+        DrawBlocks(dc);  
+    }
+
     DrawCycleMarkers(dc);
 }
 
@@ -143,4 +149,63 @@ void GanttChartPanel::OnSize(wxSizeEvent& event) {
     SetScrollbar(wxHORIZONTAL, m_scrollPos, pageSize, m_maxCycles + 5);
     
     event.Skip();
+}
+void GanttChartPanel::DrawSyncBlocks(wxDC& dc) {
+    int rowHeight = m_blockHeight;
+    std::map<std::string, int> processRows;  
+    int currentRow = 1;
+    
+    for (const auto& block : m_syncBlocks) {
+        std::string processId = block.pid;
+        
+        if (processRows.find(processId) == processRows.end()) {
+            processRows[processId] = currentRow++;
+        }
+        
+        int row = processRows[processId];
+        int x = block.startCycle * m_blockWidth;
+        int y = row * rowHeight;
+        int width = block.duration * m_blockWidth;
+        
+        wxColour color;
+        if (block.isWaiting) {
+            color = wxColour(255, 200, 200);  
+        } else {
+            color = ColorManager::GetColor(block.pid);  
+        }
+        
+        dc.SetBrush(wxBrush(color));
+        dc.SetPen(wxPen(wxColour(0, 0, 0), 1, wxPENSTYLE_SOLID));
+        dc.DrawRectangle(x, y, width, rowHeight);
+        
+        dc.SetFont(wxFont(9, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+        dc.SetTextForeground(wxColour(0, 0, 0));
+        
+        wxString text = wxString::Format("%s_%s%s", 
+                                       block.pid, 
+                                       block.resourceName,
+                                       block.isWaiting ? "_W" : "");  
+        
+        wxSize textSize = dc.GetTextExtent(text);
+        int textX = x + (width - textSize.GetWidth()) / 2;
+        int textY = y + (rowHeight - textSize.GetHeight()) / 2;
+        
+        if (textSize.GetWidth() <= width - 4) {
+            dc.DrawText(text, textX, textY);
+        }
+    }
+}
+
+
+void GanttChartPanel::AddSyncBlock(const std::string& pid, const std::string& resourceName, 
+                                   int startCycle, int duration, bool isWaiting) {
+    m_syncBlocks.emplace_back(pid, resourceName, startCycle, duration, isWaiting);
+    
+    if (startCycle + duration > m_maxCycles) {
+        m_maxCycles = startCycle + duration;
+        int pageSize = GetClientSize().GetWidth() / m_blockWidth;
+        SetScrollbar(wxHORIZONTAL, m_scrollPos, pageSize, m_maxCycles + 5);
+    }
+    
+    Refresh();
 }
